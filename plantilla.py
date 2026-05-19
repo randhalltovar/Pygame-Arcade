@@ -67,7 +67,24 @@ MATRIZ_LABERINTO = [
 fuente_titulo = font.SysFont('Arial', 50, bold=True)
 fuente_interfaz = font.SysFont('Arial', 25, bold=True)
 
-# Creación de superficies estáticas (no uqiero usar imagenes pues)
+
+def generar_mapa():
+    return [fila[:] for fila in MATRIZ_LABERINTO]
+
+mapa_actual = generar_mapa()
+
+# Fuentes
+fuente_titulo = font.SysFont('Arial', 50, bold=True)
+fuente_interfaz = font.SysFont('Arial', 25, bold=True)
+
+# Configuración del botón de sonido con bocina.png
+try:
+    img_bocina = transform.scale(image.load("bocina.png"), (40, 40))
+except:
+    img_bocina = Surface((40, 40), SRCALPHA)
+    img_bocina.fill((0, 200, 0))
+    draw.polygon(img_bocina, BLANCO, [(10, 15), (20, 15), (30, 5), (30, 35), (20, 25), (10, 25)])
+
 def crear_superficie_color(color, w, h, forma="rectangulo"):
     surf = Surface((w, h), SRCALPHA)
     if forma == "circulo":
@@ -79,11 +96,7 @@ def crear_superficie_color(color, w, h, forma="rectangulo"):
         surf.fill(color)
     return surf
 
-# Ini recursos gráficos temporales
-img_pacman = crear_superficie_color(AMARILLO, TAM_CELDA - 4, TAM_CELDA - 4, "circulo")
 img_corazon = crear_superficie_color(ROJO, 20, 20, "circulo")
-img_altavoz = crear_superficie_color(VERDE, 30, 30)
-
 img_rojo = crear_superficie_color(ROJO, TAM_CELDA - 4, TAM_CELDA - 4, "fantasma")
 img_rosa = crear_superficie_color((255, 182, 193), TAM_CELDA - 4, TAM_CELDA - 4, "fantasma")
 img_cian = crear_superficie_color(CIAN_NEON, TAM_CELDA - 4, TAM_CELDA - 4, "fantasma")
