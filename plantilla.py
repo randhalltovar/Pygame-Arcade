@@ -122,7 +122,6 @@ lass GameSprite(sprite.Sprite):
             surface.blit(self.image, (self.rect.x, self.rect.y))
 
 class Player(GameSprite):
-    """Clase Pac-Man adaptada con diseño exclusivo de carita feliz."""
     def mover(self, dx, dy):
         nueva_x = self.grid_x + dx
         nueva_y = self.grid_y + dy
@@ -408,8 +407,6 @@ while run:
 
    display.update()
 
-#pendiente con:
-#la musica de ultimo
-#los fantasmas como que se vuelven gafos
-
+#Ahora no agarra 
+#POR QUE NO AGARAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa
 quit()
