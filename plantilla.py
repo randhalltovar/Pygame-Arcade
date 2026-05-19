@@ -104,12 +104,11 @@ img_naranja = crear_superficie_color((255, 165, 0), TAM_CELDA - 4, TAM_CELDA - 4
 img_huida = crear_superficie_color(AZUL_PALIDO, TAM_CELDA - 4, TAM_CELDA - 4, "fantasma")
 
 # 3. DEFINICIÓN DE CLASES
-class GameSprite(sprite.Sprite):
-    #Clase base para todos los objetos visuales del juego.
+lass GameSprite(sprite.Sprite):
     def __init__(self, superficie_img, x_matriz, y_matriz):
         super().__init__()
         self.image = superficie_img
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect() if superficie_img else Rect(0, 0, TAM_CELDA - 4, TAM_CELDA - 4)
         self.grid_x = x_matriz
         self.grid_y = y_matriz
         self.actualizar_posicion_real()
@@ -119,11 +118,12 @@ class GameSprite(sprite.Sprite):
         self.rect.y = MARGEN_Y + self.grid_y * TAM_CELDA + (TAM_CELDA - self.rect.height) // 2
 
     def reset(self, surface):
-        surface.blit(self.image, (self.rect.x, self.rect.y))
+        if self.image:
+            surface.blit(self.image, (self.rect.x, self.rect.y))
 
 class Player(GameSprite):
-    #Clase para el personaje
-   def mover(self, dx, dy):
+    """Clase Pac-Man adaptada con diseño exclusivo de carita feliz."""
+    def mover(self, dx, dy):
         nueva_x = self.grid_x + dx
         nueva_y = self.grid_y + dy
         
@@ -148,20 +148,21 @@ class Player(GameSprite):
         draw.arc(surface, (0, 0, 0), rect_sonrisa, math.pi, 2 * math.pi, 2)
 
 class Enemy(GameSprite):
-    #Clase para los fantasmas (personalizados según su personalidad)
     def __init__(self, superficie_img, x_matriz, y_matriz, tipo, img_normal):
         super().__init__(superficie_img, x_matriz, y_matriz)
         self.tipo = tipo
         self.img_normal = img_normal
-        self.cooldown_movimiento = 0 # Para controlar la velocidad 
+        self.cooldown_movimiento = 0
+        # Registro de la celda previa para prohibir el retroceso inmediato
+        self.last_grid_x = x_matriz
+        self.last_grid_y = y_matriz
         
     def update(self, player_x, player_y):
         self.cooldown_movimiento += 1
-        if self.cooldown_movimiento < 15: # Se mueve cada 15 fotogramas
+        if self.cooldown_movimiento < 12: 
             return
         self.cooldown_movimiento = 0
 
-        # Si el modo huida está activo se invierte el comportamiento
         if modo_huida:
             self.image = img_huida
             self.ejecutar_movimiento_huida(player_x, player_y)
@@ -171,44 +172,47 @@ class Enemy(GameSprite):
 
     def obtener_movimientos_validos(self):
         movimientos = []
-        direcciones = [((0, 1)), ((0, -1)), ((1, 0)), ((-1, 0))]
+        direcciones = [(0, 1), (0, -1), (1, 0), (-1, 0)]
         for dx, dy in direcciones:
             nx = self.grid_x + dx
             ny = self.grid_y + dy
             if 0 <= nx < COLUMNAS and 0 <= ny < FILAS:
-                if MATRIZ_LABERINTO[ny][nx] != 1:
-                    movimientos.append((nx, ny))
+                if mapa_actual[ny][nx] != 1:
+                    # Se filtra para evitar que regrese a la casilla de la que acaba de salir
+                    if (nx, ny) != (self.last_grid_x, self.last_grid_y):
+                        movimientos.append((nx, ny))
+        
+        # Si se encuentra en un callejo sin salida, se le permite regresar
+        if not movimientos:
+            for dx, dy in direcciones:
+                nx = self.grid_x + dx
+                ny = self.grid_y + dy
+                if 0 <= nx < COLUMNAS and 0 <= ny < FILAS:
+                    if mapa_actual[ny][nx] != 1:
+                        movimientos.append((nx, ny))
         return movimientos
 
     def ejecutar_ia_normal(self, px, py):
         movimientos = self.obtener_movimientos_validos()
         if not movimientos:
             return
+        tx, ty = px, py
 
-        tx, ty = px, py # Objetivo 
-
+        
         if self.tipo == "Perseguidor":
-            # Calcula distancia euclidiana mínima directa
             tx, ty = px, py
-
         elif self.tipo == "Predicador":
-            # Calcula posición futura simulada a 5 celdas de distancia aproximada
             tx, ty = px + 2, py + 2 
-
         elif self.tipo == "Flanqueador":
-            # Ruta lateral alternativa
             tx, ty = px - 3, py
-
-        elif self.tipo == "Erratico":
-            # Si está cerca, se vuelve completamente aleatorio
+        elif self.tipo == "Errático":
             dist = math.sqrt((self.grid_x - px)**2 + (self.grid_y - py)**2)
             if dist < 4:
-                nx, ny = random.choice(movimientos)
-                self.grid_x, self.grid_y = nx, ny
+                self.last_grid_x, self.last_grid_y = self.grid_x, self.grid_y
+                self.grid_x, self.grid_y = random.choice(movimientos)
                 self.actualizar_posicion_real()
                 return
 
-        # Elegir el movimiento valido que más acerque al objetivo calculado
         mejor_movimiento = movimientos[0]
         dist_minima = float('inf')
         for nx, ny in movimientos:
@@ -217,6 +221,7 @@ class Enemy(GameSprite):
                 dist_minima = d
                 mejor_movimiento = (nx, ny)
 
+        self.last_grid_x, self.last_grid_y = self.grid_x, self.grid_y
         self.grid_x, self.grid_y = mejor_movimiento
         self.actualizar_posicion_real()
 
@@ -225,7 +230,6 @@ class Enemy(GameSprite):
         if not movimientos:
             return
 
-        # Elige el movimiento que maximice la distancia al jugador
         mejor_movimiento = movimientos[0]
         dist_maxima = -1
         for nx, ny in movimientos:
@@ -234,6 +238,7 @@ class Enemy(GameSprite):
                 dist_maxima = d
                 mejor_movimiento = (nx, ny)
 
+        self.last_grid_x, self.last_grid_y = self.grid_x, self.grid_y
         self.grid_x, self.grid_y = mejor_movimiento
         self.actualizar_posicion_real()
 
