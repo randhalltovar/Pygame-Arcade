@@ -9,7 +9,7 @@ mixer.init()
 # CONFIGURACIÓN Y CONSTANTES
 ANCHO, ALTO = 800, 600
 FPS = 60
-TITULO = 'Pac-Man Laberinto Avanzado'
+TITULO = 'Pac-Man'
 
 # Paleta de coloresssssssssssss
 COLOR_FONDO = (13, 13, 13) # Negro NEGROO
@@ -63,7 +63,7 @@ MATRIZ_LABERINTO = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ]
 
-# Fuentes
+# Fuentes (de los deseos aaaa jsjsjsjjsadjhabsj)
 fuente_titulo = font.SysFont('Arial', 50, bold=True)
 fuente_interfaz = font.SysFont('Arial', 25, bold=True)
 
@@ -110,16 +110,29 @@ class GameSprite(sprite.Sprite):
 
 class Player(GameSprite):
     #Clase para el personaje
-    def mover(self, dx, dy):
+   def mover(self, dx, dy):
         nueva_x = self.grid_x + dx
         nueva_y = self.grid_y + dy
         
-        # Validar límites de la matriz y colisión con paredes
         if 0 <= nueva_x < COLUMNAS and 0 <= nueva_y < FILAS:
-            if MATRIZ_LABERINTO[nueva_y][nueva_x] != 1:
+            if mapa_actual[nueva_y][nueva_x] != 1:
                 self.grid_x = nueva_x
                 self.grid_y = nueva_y
                 self.actualizar_posicion_real()
+
+    def reset(self, surface):
+        centro_x = self.rect.x + self.rect.width // 2
+        centro_y = self.rect.y + self.rect.height // 2
+        radio = self.rect.width // 2
+
+        # Dibujo de círculo amarillo base
+        draw.circle(surface, AMARILLO, (centro_x, centro_y), radio)
+        # Ojos negros pequeños
+        draw.circle(surface, (0, 0, 0), (centro_x - 4, centro_y - 3), 2)
+        draw.circle(surface, (0, 0, 0), (centro_x + 4, centro_y - 3), 2)
+        # Arco de sonrisa feliz
+        rect_sonrisa = Rect(centro_x - 5, centro_y - 2, 10, 8)
+        draw.arc(surface, (0, 0, 0), rect_sonrisa, math.pi, 2 * math.pi, 2)
 
 class Enemy(GameSprite):
     #Clase para los fantasmas (personalizados según su personalidad)
@@ -368,8 +381,8 @@ while run:
             estado_juego = "MENU"
             time.wait(200)
 
-    # C. Componente de Audio Global e Interfaz del Altavoz
-    window.blit(img_altavoz, (rect_boton_sonido.x, rect_boton_sonido.y))
+    # C. Componente de Audio 
+    window.blit(img_altavoz, (rect_boton_sonid.x, rect_boton_sonido.y))
     if not sonido_activo:
         # Superposición visual de cancelación del canal auditivo
         draw.line(window, ROJO, (rect_boton_sonido.x, rect_boton_sonido.y), 
@@ -377,5 +390,8 @@ while run:
 
    display.update()
 
+#pendiente con:
+#la musica de ultimo
+#los fantasmas como que se vuelven gafos
 
 quit()
