@@ -2,6 +2,7 @@ from pygame import *
 import random
 import math
 
+# INICIALIZACIÓN
 init()
 font.init()
 mixer.init()
@@ -9,37 +10,30 @@ mixer.init()
 # CONFIGURACIÓN Y CONSTANTES
 ANCHO, ALTO = 800, 600
 FPS = 60
-TITULO = 'Pac-Man'
+TITULO = 'Pac-Man Laberinto Avanzado'
 
-# Paleta de coloresssssssssssss
-COLOR_FONDO = (13, 13, 13) # Negro NEGROO
+COLOR_FONDO = (13, 13, 13)
 CIAN_NEON = (0, 255, 255)
 BLANCO = (255, 255, 255)
 AMARILLO = (255, 255, 0)
 AZUL_PALIDO = (173, 216, 230)
 ROJO = (255, 0, 0)
-VERDE = (0, 255, 0)
 
-# Dimensiones de la matriz del tablero
 FILAS = 20
 COLUMNAS = 20
-TAM_CELDA = 25 # C/celda 25x25 píxeles
+TAM_CELDA = 25 
 
-# Centrar tablero pa que me deje espacio para el puntaje, vidas y eso
 MARGEN_X = (ANCHO - (COLUMNAS * TAM_CELDA)) // 2
-MARGEN_Y = 80
+MARGEN_Y = 90
 
-# Variables globales de control
 vidas = 3
+puntaje = 0
 sonido_activo = True
-estado_juego = "MENU" # Estados posibles: "MENU", "JUEGO", "GAME_OVER"
+estado_juego = "MENU" 
 
-# Temporizador para puntos especiales
 modo_huida = False
 tiempo_huida_restante = 0
 
-# Matriz lógica del tablero
-# 1 = Pared, 0 = Camino vacío, 2 = Punto pequeño, 3 = Punto especial, 4 = Reaparición
 MATRIZ_LABERINTO = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,3,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,3,1],
@@ -51,39 +45,38 @@ MATRIZ_LABERINTO = [
     [1,1,1,1,2,1,1,1,0,1,1,0,1,1,1,2,1,1,1,1],
     [0,0,0,1,2,1,0,0,0,0,0,0,0,0,1,2,1,0,0,0],
     [1,1,1,1,2,1,0,1,1,4,4,1,1,0,1,2,1,1,1,1],
-    [0,0,0,0,2,0,0,1,4,4,4,4,1,0,0,2,0,0,0,0],
+    [1,2,2,2,2,0,0,1,4,4,4,4,1,0,0,2,2,2,2,1],
     [1,1,1,1,2,1,0,1,1,1,1,1,1,0,1,2,1,1,1,1],
     [0,0,0,1,2,1,0,0,0,0,0,0,0,0,1,2,1,0,0,0],
     [1,1,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,1,1],
     [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
     [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
-    [1,3,2,1,2,2,2,2,2,4,4,2,2,2,2,2,1,2,3,1],
+    [1,3,2,1,2,2,2,2,2,0,0,2,2,2,2,2,1,2,3,1],
     [1,1,2,1,2,1,2,1,1,1,1,1,1,2,1,2,1,2,1,1],
     [1,2,2,2,2,1,2,2,2,1,1,2,2,2,1,2,2,2,2,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ]
-
-# Fuentes (de los deseos aaaa jsjsjsjjsadjhabsj)
-fuente_titulo = font.SysFont('Arial', 50, bold=True)
-fuente_interfaz = font.SysFont('Arial', 25, bold=True)
-
 
 def generar_mapa():
     return [fila[:] for fila in MATRIZ_LABERINTO]
 
 mapa_actual = generar_mapa()
 
-# Fuentes
-fuente_titulo = font.SysFont('Arial', 50, bold=True)
+fuente_titulo = font.SysFont('Arial', 55, bold=True)
 fuente_interfaz = font.SysFont('Arial', 25, bold=True)
 
-# Configuración del botón de sonido con bocina.png
 try:
     img_bocina = transform.scale(image.load("bocina.png"), (40, 40))
 except:
     img_bocina = Surface((40, 40), SRCALPHA)
     img_bocina.fill((0, 200, 0))
     draw.polygon(img_bocina, BLANCO, [(10, 15), (20, 15), (30, 5), (30, 35), (20, 25), (10, 25)])
+
+try:
+    mixer.music.load("Fondo.mp3")
+    mixer.music.play(-1)
+except:
+    print("Advertencia: No se encontró el archivo Fondo.mp3 en el directorio.")
 
 def crear_superficie_color(color, w, h, forma="rectangulo"):
     surf = Surface((w, h), SRCALPHA)
@@ -103,8 +96,7 @@ img_cian = crear_superficie_color(CIAN_NEON, TAM_CELDA - 4, TAM_CELDA - 4, "fant
 img_naranja = crear_superficie_color((255, 165, 0), TAM_CELDA - 4, TAM_CELDA - 4, "fantasma")
 img_huida = crear_superficie_color(AZUL_PALIDO, TAM_CELDA - 4, TAM_CELDA - 4, "fantasma")
 
-# 3. DEFINICIÓN DE CLASES
-lass GameSprite(sprite.Sprite):
+class GameSprite(sprite.Sprite):
     def __init__(self, superficie_img, x_matriz, y_matriz):
         super().__init__()
         self.image = superficie_img
@@ -122,6 +114,9 @@ lass GameSprite(sprite.Sprite):
             surface.blit(self.image, (self.rect.x, self.rect.y))
 
 class Player(GameSprite):
+    def __init__(self, x_matriz, y_matriz):
+        super().__init__(None, x_matriz, y_matriz)
+
     def mover(self, dx, dy):
         nueva_x = self.grid_x + dx
         nueva_y = self.grid_y + dy
@@ -137,28 +132,25 @@ class Player(GameSprite):
         centro_y = self.rect.y + self.rect.height // 2
         radio = self.rect.width // 2
 
-        # Dibujo de círculo amarillo base
         draw.circle(surface, AMARILLO, (centro_x, centro_y), radio)
-        # Ojos negros pequeños
         draw.circle(surface, (0, 0, 0), (centro_x - 4, centro_y - 3), 2)
         draw.circle(surface, (0, 0, 0), (centro_x + 4, centro_y - 3), 2)
-        # Arco de sonrisa feliz
-        rect_sonrisa = Rect(centro_x - 5, centro_y - 2, 10, 8)
+        rect_sonrisa = Rect(centro_x - 4, centro_y - 2, 10, 8)
         draw.arc(surface, (0, 0, 0), rect_sonrisa, math.pi, 2 * math.pi, 2)
 
 class Enemy(GameSprite):
-    def __init__(self, superficie_img, x_matriz, y_matriz, tipo, img_normal):
+    def __init__(self, superficie_img, x_matriz, y_matriz, tipo, img_normal, max_cooldown):
         super().__init__(superficie_img, x_matriz, y_matriz)
         self.tipo = tipo
         self.img_normal = img_normal
         self.cooldown_movimiento = 0
-        # Registro de la celda previa para prohibir el retroceso inmediato
+        self.max_cooldown = max_cooldown
         self.last_grid_x = x_matriz
         self.last_grid_y = y_matriz
         
     def update(self, player_x, player_y):
         self.cooldown_movimiento += 1
-        if self.cooldown_movimiento < 12: 
+        if self.cooldown_movimiento < self.max_cooldown: 
             return
         self.cooldown_movimiento = 0
 
@@ -177,11 +169,9 @@ class Enemy(GameSprite):
             ny = self.grid_y + dy
             if 0 <= nx < COLUMNAS and 0 <= ny < FILAS:
                 if mapa_actual[ny][nx] != 1:
-                    # Se filtra para evitar que regrese a la casilla de la que acaba de salir
                     if (nx, ny) != (self.last_grid_x, self.last_grid_y):
                         movimientos.append((nx, ny))
         
-        # Si se encuentra en un callejo sin salida, se le permite regresar
         if not movimientos:
             for dx, dy in direcciones:
                 nx = self.grid_x + dx
@@ -191,13 +181,8 @@ class Enemy(GameSprite):
                         movimientos.append((nx, ny))
         return movimientos
 
-    def ejecutar_ia_normal(self, px, py):
-        movimientos = self.obtener_movimientos_validos()
-        if not movimientos:
-            return
         tx, ty = px, py
 
-        
         if self.tipo == "Perseguidor":
             tx, ty = px, py
         elif self.tipo == "Predicador":
@@ -224,14 +209,9 @@ class Enemy(GameSprite):
         self.grid_x, self.grid_y = mejor_movimiento
         self.actualizar_posicion_real()
 
-    def ejecutar_movimiento_huida(self, px, py):
-        movimientos = self.obtener_movimientos_validos()
-        if not movimientos:
-            return
-
         mejor_movimiento = movimientos[0]
         dist_maxima = -1
-        for nx, ny in movimientos:
+        for nx, nyo in movimientos:
             d = math.sqrt((nx - px)**2 + (ny - py)**2)
             if d > dist_maxima:
                 dist_maxima = d
@@ -241,43 +221,30 @@ class Enemy(GameSprite):
         self.grid_x, self.grid_y = mejor_movimiento
         self.actualizar_posicion_real()
 
-# 4. INSTANCIACIÓN DE OBJETOS
 window = display.set_mode((ANCHO, ALTO))
 display.set_caption(TITULO)
 reloj = time.Clock()
 
-# Buscar coordenadas iniciales de reaparición (celda tipo 4)
-def obtener_posicion_reaparicion():
-    for f in range(FILAS):
-        for c in range(COLUMNAS):
-            if MATRIZ_LABERINTO[f][c] == 4:
-                return c, f
-    return 1, 1
+player = Player(1, 18)
 
-px_ini, py_ini = obtener_posicion_reaparicion()
-player = Player(img_pacman, px_ini, py_ini)
-
-# se crean los ghostys con sus personalidades 
 fantasmas = [
-    Enemy(img_rojo, 9, 9, "Perseguidor", img_rojo),
-    Enemy(img_rosa, 10, 9, "Predicador", img_rosa),
-    Enemy(img_cian, 9, 10, "Flanqueador", img_cian),
-    Enemy(img_naranja, 10, 10, "Errático", img_naranja)
+    Enemy(img_rojo, 9, 9, "Perseguidor", img_rojo, 12),
+    Enemy(img_rosa, 10, 9, "Predicador", img_rosa, 15),
+    Enemy(img_cian, 9, 10, "Flanqueador", img_cian, 18),
+    Enemy(img_naranja, 10, 10, "Errático", img_naranja, 21)
 ]
 
-# Definición de botones de la interfaz
-rect_boton_jugar = Rect(ANCHO // 2 - 100, 220, 200, 50)
-rect_boton_salir = Rect(ANCHO // 2 - 100, 300, 200, 50)
+rect_menu_jugar = Rect(ANCHO // 2 - 100, 300, 200, 50)
+rect_menu_salir = Rect(ANCHO // 2 - 100, 380, 200, 50)
+rect_pantalla_accion = Rect(ANCHO // 2 - 100, 330, 200, 50)
 rect_boton_sonido = Rect(ANCHO - 60, ALTO - 60, 40, 40)
 
-# 5. CICLO PRINCIPAL (GAME LOOP)
 run = True
 
 while run:
     tiempo_delta = reloj.tick(FPS)
     window.fill(COLOR_FONDO)
     
-    # A. Gestión de Eventos (intento 1)
     for e in event.get():
         if e.type == QUIT:
             run = False
@@ -285,128 +252,153 @@ while run:
         if e.type == MOUSEBUTTONDOWN:
             pos_raton = e.pos
             if estado_juego == "MENU":
-                if rect_boton_jugar.collidepoint(pos_raton):
-                    estado_juego = "JUEGO"
+                if rect_menu_jugar.collidepoint(pos_raton):
+                    mapa_actual = generar_mapa()
                     vidas = 3
+                    puntaje = 0
                     modo_huida = False
-                elif rect_boton_salir.collidepoint(pos_raton):
+                    player.grid_x, player.grid_y = 1, 18
+                    player.actualizar_posicion_real()
+                    for f_item in fantasmas:
+                        f_item.grid_x, f_item.grid_y = 9, 9
+                        f_item.last_grid_x, f_item.last_grid_y = 9, 9
+                        f_item.actualizar_posicion_real()
+                    estado_juego = "JUEGO"
+                elif rect_menu_salir.collidepoint(pos_raton):
                     run = False
+            
+            elif estado_juego in ["GAME_OVER", "VICTORIA"]:
+                if rect_pantalla_accion.collidepoint(pos_raton):
+                    estado_juego = "MENU"
             
             if rect_boton_sonido.collidepoint(pos_raton):
                 sonido_activo = not sonido_activo
+                if sonido_activo:
+                    mixer.music.unpause()
+                else:
+                    mixer.music.pause()
 
         if e.type == KEYDOWN and estado_juego == "JUEGO":
-            if e.key == K_a or e.key == K_LEFT:
+            if e.key == K_LEFT:
                 player.mover(-1, 0)
-            elif e.key == K_d or e.key == K_RIGHT:
+            elif e.key == K_RIGHT:
                 player.mover(1, 0)
-            elif e.key == K_w or e.key == K_UP:
+            elif e.key == K_UP:
                 player.mover(0, -1)
-            elif e.key == K_s or e.key == K_DOWN:
+            elif e.key == K_DOWN:
                 player.mover(0, 1)
 
-    # B. Lógica y Dibujado de Estados del Juego 
     if estado_juego == "MENU":
-        # Títulocon sus colores llamativos
-        texto_bienvenido = fuente_titulo.render("BIENVENIDO", True, CIAN_NEON)
-        window.blit(texto_bienvenido, (ANCHO // 2 - texto_bienvenido.get_width() // 2, 100))
+        texto_sombra = fuente_titulo.render("PAC-MAN ARCADE", True, (100, 100, 0))
+        window.blit(texto_sombra, (ANCHO // 2 - texto_sombra.get_width() // 2 + 4, 84))
+        texto_titulo_menu = fuente_titulo.render("PAC-MAN ARCADE", True, AMARILLO)
+        window.blit(texto_titulo_menu, (ANCHO // 2 - texto_titulo_menu.get_width() // 2, 80))
+
+        draw.circle(window, AMARILLO, (ANCHO // 2 - 100, 220), 10)
+        window.blit(img_rojo, (ANCHO // 2 - 60, 210))
+        window.blit(img_rosa, (ANCHO // 2 - 20, 210))
+        window.blit(img_cian, (ANCHO // 2 + 20, 210))
+        window.blit(img_naranja, (ANCHO // 2 + 60, 210))
         
-        # Botones del menú
-        draw.rect(window, CIAN_NEON, rect_boton_jugar, 2)
+        draw.rect(window, CIAN_NEON, rect_menu_jugar, 2)
         texto_jugar = fuente_interfaz.render("JUGAR", True, BLANCO)
-        window.blit(texto_jugar, (rect_boton_jugar.x + (rect_boton_jugar.width - texto_jugar.get_width()) // 2, rect_boton_jugar.y + 10))
+        window.blit(texto_jugar, (rect_menu_jugar.x + (rect_menu_jugar.width - texto_jugar.get_width()) // 2, rect_menu_jugar.y + 10))
         
-        draw.rect(window, CIAN_NEON, rect_boton_salir, 2)
+        draw.rect(window, CIAN_NEON, rect_menu_salir, 2)
         texto_salir = fuente_interfaz.render("SALIR", True, BLANCO)
-        window.blit(texto_salir, (rect_boton_salir.x + (rect_boton_salir.width - texto_salir.get_width()) // 2, rect_boton_salir.y + 10))
+        window.blit(texto_salir, (rect_menu_salir.x + (rect_menu_salir.width - texto_salir.get_width()) // 2, rect_menu_salir.y + 10))
 
     elif estado_juego == "JUEGO":
-        # temporizador del estado de huida
         if modo_huida:
             tiempo_huida_restante -= tiempo_delta
             if tiempo_huida_restante <= 0:
                 modo_huida = False
 
-        # Dibujar la Franja Superior de Vidas e Interfaz
         texto_vidas = fuente_interfaz.render("VIDAS: ", True, BLANCO)
-        window.blit(texto_vidas, (MARGEN_X, 30))
+        window.blit(texto_vidas, (50, 35))
         for i in range(vidas):
-            window.blit(img_corazon, (MARGEN_X + 90 + (i * 30), 35))
+            window.blit(img_corazon, (135 + (i * 25), 40))
+            
+        texto_puntaje = fuente_interfaz.render(f"PUNTAJE: {puntaje}", True, AMARILLO)
+        window.blit(texto_puntaje, (320, 35))
             
         if modo_huida:
             texto_timer = fuente_interfaz.render(f"Poder: {int(tiempo_huida_restante/1000)}s", True, AZUL_PALIDO)
-            window.blit(texto_timer, (ANCHO - MARGEN_X - 150, 30))
+            window.blit(texto_timer, (610, 35))
 
-        # Procesamiento y renderizado del Laberinto Matricial
         for f in range(FILAS):
             for c in range(COLUMNAS):
-                celda = MATRIZ_LABERINTO[f][c]
+                celda = mapa_actual[f][c]
                 pos_celda_x = MARGEN_X + c * TAM_CELDA
                 pos_celda_y = MARGEN_Y + f * TAM_CELDA
                 
                 if celda == 1:
-                    # Líneas de cian para conformar los muros contenedores
                     draw.rect(window, CIAN_NEON, (pos_celda_x, pos_celda_y, TAM_CELDA, TAM_CELDA), 1)
                 elif celda == 2:
-                    # Puntos pequeños consumibles
                     draw.circle(window, AMARILLO, (pos_celda_x + TAM_CELDA // 2, pos_celda_y + TAM_CELDA // 2), 3)
                 elif celda == 3:
-                    # Puntos especiales grandes
                     draw.circle(window, BLANCO, (pos_celda_x + TAM_CELDA // 2, pos_celda_y + TAM_CELDA // 2), 7)
 
-        # Interac de recolección del jugador sobre las celdas 
-        celda_actual_tipo = MATRIZ_LABERINTO[player.grid_y][player.grid_x]
+        celda_actual_tipo = mapa_actual[player.grid_y][player.grid_x]
         if celda_actual_tipo == 2:
-            MATRIZ_LABERINTO[player.grid_y][player.grid_x] = 0
+            mapa_actual[player.grid_y][player.grid_x] = 0
+            puntaje += 10
         elif celda_actual_tipo == 3:
-            MATRIZ_LABERINTO[player.grid_y][player.grid_x] = 0
+            mapa_actual[player.grid_y][player.grid_x] = 0
+            puntaje += 50
             modo_huida = True
-            tiempo_huida_restante = 30000 # de 30 segundos en milisegundos
+            tiempo_huida_restante = 30000 
 
-        # Actualizar, procesar y dibujar Fantasmas
+        monedas_restantes = sum(fila.count(2) + fila.count(3) for fila in mapa_actual)
+        if monedas_restantes == 0:
+            estado_juego = "VICTORIA"
+
         for fantasma in fantasmas:
             fantasma.update(player.grid_x, player.grid_y)
             fantasma.reset(window)
             
-            # Verificaaa colisiones en la misma celda de la matriz 
-            if fantasma.grid_x == player.grid_x and fantasma.grid_y == player.grid_y:
+            if (fantasma.grid_x == player.grid_x and fantasma.grid_y == player.grid_y) or fantasma.rect.colliderect(player.rect):
                 if modo_huida:
-                    # En modo de huida el fantasma es devuelto a la zona central de reaparición
                     fantasma.grid_x, fantasma.grid_y = 9, 9
+                    fantasma.last_grid_x, fantasma.last_grid_y = 9, 9
                     fantasma.actualizar_posicion_real()
+                    puntaje += 200
                 else:
-                    # Decremento de la salud y recolocación del jugador
                     vidas -= 1
-                    player.grid_x, player.grid_y = px_ini, py_ini
+                    player.grid_x, player.grid_y = 1, 18 
                     player.actualizar_posicion_real()
+                    for f_item in fantasmas:
+                        f_item.grid_x, f_item.grid_y = 9, 9
+                        f_item.last_grid_x, f_item.last_grid_y = 9, 9
+                        f_item.actualizar_posicion_real()
+                        
                     if vidas <= 0:
                         estado_juego = "GAME_OVER"
+                    break
 
-        # Dibujar al jugador
         player.reset(window)
 
     elif estado_juego == "GAME_OVER":
-        # Gestión y visualización de la pantalla de derrota
         texto_derrota = fuente_titulo.render("GAME OVER", True, ROJO)
-        window.blit(texto_derrota, (ANCHO // 2 - texto_derrota.get_width() // 2, ALTO // 2 - 80))
+        window.blit(texto_derrota, (ANCHO // 2 - texto_derrota.get_width() // 2, 200))
         
-        texto_reintento = fuente_interfaz.render("Haz clic en cualquier parte para volver al Menú", True, BLANCO)
-        window.blit(texto_reintento, (ANCHO // 2 - texto_reintento.get_width() // 2, ALTO // 2 + 20))
-        
-        # Captura de clic en la pantalla de derrota para regresar
-        if mouse.get_pressed()[0]:
-            estado_juego = "MENU"
-            time.wait(200)
+        draw.rect(window, ROJO, rect_pantalla_accion, 2)
+        texto_reintentar = fuente_interfaz.render("REINTENTAR", True, BLANCO)
+        window.blit(texto_reintentar, (rect_pantalla_accion.x + (rect_pantalla_accion.width - texto_reintentar.get_width()) // 2, rect_pantalla_accion.y + 10))
 
-    # C. Componente de Audio 
-    window.blit(img_altavoz, (rect_boton_sonid.x, rect_boton_sonido.y))
+    elif estado_juego == "VICTORIA":
+        texto_ganas = fuente_titulo.render("¡HAS GANADO!", True, AMARILLO)
+        window.blit(texto_ganas, (ANCHO // 2 - texto_ganas.get_width() // 2, 200))
+        
+        draw.rect(window, AMARILLO, rect_pantalla_accion, 2)
+        texto_menu = fuente_interfaz.render("OTRA VEZ", True, BLANCO)
+        window.blit(texto_menu, (rect_pantalla_accion.x + (rect_pantalla_accion.width - texto_menu.get_width()) // 2, rect_pantalla_accion.y + 10))
+
+    windopw.blit(img_bocina, (rect_boton_sonido.x, rect_boton_sonido.y))
     if not sonido_activo:
-        # Superposición visual de cancelación del canal auditivo
         draw.line(window, ROJO, (rect_boton_sonido.x, rect_boton_sonido.y), 
                   (rect_boton_sonido.x + rect_boton_sonido.width, rect_boton_sonido.y + rect_boton_sonido.height), 4)
 
-   display.update()
+    display.update()
 
-#Ahora no agarra 
-#POR QUE NO AGARAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa
 quit()
