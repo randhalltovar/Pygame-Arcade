@@ -10,7 +10,7 @@ mixer.init()
 # CONFIGURACIÓN Y CONSTANTES
 ANCHO, ALTO = 800, 600
 FPS = 60
-TITULO = 'Pac-Man Laberinto Avanzado'
+TITULO = 'Pac-Man'
 
 COLOR_FONDO = (13, 13, 13)
 CIAN_NEON = (0, 255, 255)
@@ -181,6 +181,11 @@ class Enemy(GameSprite):
                         movimientos.append((nx, ny))
         return movimientos
 
+    def ejecutar_ia_normal(self, px, py):
+        movimientos = self.obtener_movimientos_validos()
+        if not movimientos:
+            return
+
         tx, ty = px, py
 
         if self.tipo == "Perseguidor":
@@ -209,9 +214,14 @@ class Enemy(GameSprite):
         self.grid_x, self.grid_y = mejor_movimiento
         self.actualizar_posicion_real()
 
+    def ejecutar_movimiento_huida(self, px, py):
+        movimientos = self.obtener_movimientos_validos()
+        if not movimientos:
+            return
+
         mejor_movimiento = movimientos[0]
         dist_maxima = -1
-        for nx, nyo in movimientos:
+        for nx, ny in movimientos:
             d = math.sqrt((nx - px)**2 + (ny - py)**2)
             if d > dist_maxima:
                 dist_maxima = d
@@ -394,7 +404,7 @@ while run:
         texto_menu = fuente_interfaz.render("OTRA VEZ", True, BLANCO)
         window.blit(texto_menu, (rect_pantalla_accion.x + (rect_pantalla_accion.width - texto_menu.get_width()) // 2, rect_pantalla_accion.y + 10))
 
-    windopw.blit(img_bocina, (rect_boton_sonido.x, rect_boton_sonido.y))
+    window.blit(img_bocina, (rect_boton_sonido.x, rect_boton_sonido.y))
     if not sonido_activo:
         draw.line(window, ROJO, (rect_boton_sonido.x, rect_boton_sonido.y), 
                   (rect_boton_sonido.x + rect_boton_sonido.width, rect_boton_sonido.y + rect_boton_sonido.height), 4)
